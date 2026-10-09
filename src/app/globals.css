@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f3efe6;
+  --ink: #1c1915;
+  --ink-soft: #6b645b;
+  --line: #e4d9c8;
+  --pine: #0e6b56;
+  --pine-deep: #0a4f40;
+  --sand: #fffdf8;
+  --danger: #9f1239;
+  --warn: #92400e;
+}
+
+@theme inline {
+  --font-sans: var(--font-source);
+  --font-display: var(--font-fraunces);
+  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
+  --color-sand: var(--sand);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-source), "Source Sans 3", sans-serif;
+}

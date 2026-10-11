@@ -1,5 +1,6 @@
 import { logout } from "@/app/actions/auth";
 import { Brand } from "@/components/layout/brand";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { displayName } from "@/lib/format";
 import { getCurrentUser } from "@/lib/meetings/api";
 import { ROUTES } from "@/constants/routes";
@@ -13,6 +14,7 @@ export async function WorkspaceHeader() {
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-4">
         <Brand href={ROUTES.dashboard} />
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <p className="hidden text-sm text-ink-soft sm:block">{displayName(user)}</p>
           <Link href={ROUTES.newMeeting} className="text-sm font-semibold text-pine">
             New meeting

@@ -2,7 +2,7 @@
 
 Next.js app for the meeting platform. It signs people in and manages meeting records through the Django API in `D:\online-meeting`.
 
-Live video, WebRTC signaling, and AI summaries are other services. This app does not implement them.
+Live video and AI notes are not in this app yet. Django will own those later, in the same project. `apps/ai` has no API yet, so this frontend only calls the users and meetings routes.
 
 ## Stack
 

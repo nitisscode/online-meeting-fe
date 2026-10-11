@@ -1,14 +1,34 @@
 @import "tailwindcss";
 
-:root {
+:root,
+[data-theme="dark"] {
+  /* Slate grey, a step darker than the previous dark surface. */
+  color-scheme: dark;
+  --paper: #2a303b;
+  --sand: #343b48;
+  --ink: #e7ebf1;
+  --ink-soft: #a9b3c2;
+  --line: #4c5666;
+  --pine: #3cba96;
+  --pine-deep: #2f9a7b;
+  --foam: #f7f8fa;
+  --danger: #f0b4c0;
+  --danger-fill: #9a4458;
+  --warn: #e4b56a;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
   --paper: #f3efe6;
+  --sand: #fffdf8;
   --ink: #1c1915;
   --ink-soft: #6b645b;
   --line: #e4d9c8;
   --pine: #0e6b56;
   --pine-deep: #0a4f40;
-  --sand: #fffdf8;
+  --foam: #f7f8fa;
   --danger: #9f1239;
+  --danger-fill: #9f1239;
   --warn: #92400e;
 }
 
@@ -23,7 +43,9 @@
   --color-pine: var(--pine);
   --color-pine-deep: var(--pine-deep);
   --color-sand: var(--sand);
+  --color-foam: var(--foam);
   --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
   --color-warn: var(--warn);
   --color-background: var(--paper);
   --color-foreground: var(--ink);
@@ -33,4 +55,9 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-source), "Source Sans 3", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--pine) 35%, transparent);
+  color: var(--ink);
 }

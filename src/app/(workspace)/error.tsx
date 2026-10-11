@@ -10,7 +10,7 @@ export default function WorkspaceError({ reset }: { error: Error & { digest?: st
       <button
         type="button"
         onClick={reset}
-        className="mt-4 rounded-full bg-pine px-4 py-2 text-sm font-semibold text-sand"
+        className="mt-4 rounded-full bg-pine px-4 py-2 text-sm font-semibold text-foam"
       >
         Try again
       </button>

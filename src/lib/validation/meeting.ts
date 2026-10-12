@@ -60,6 +60,16 @@ export const createMeetingSchema = z
 
 export type CreateMeetingForm = z.infer<typeof createMeetingSchema>;
 
+export const meetingSettingsSchema = z.object({
+  allow_chat: z.boolean(),
+  allow_screen_share: z.boolean(),
+  allow_recording: z.boolean(),
+  waiting_room_enabled: z.boolean(),
+  allow_raise_hand: z.boolean(),
+});
+
+export type MeetingSettingsInput = z.infer<typeof meetingSettingsSchema>;
+
 export function toCreateMeetingInput(value: CreateMeetingForm) {
   const startNow = value.timing === "now";
   return {

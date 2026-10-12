@@ -45,6 +45,11 @@ export function parseApiError(status: number, body: unknown): ApiError {
     return new ApiError(detail.join(" "), status);
   }
 
+  const errorMessage = asMessages(record.error);
+  if (errorMessage.length > 0) {
+    return new ApiError(errorMessage.join(" "), status);
+  }
+
   const fieldErrors: Record<string, string[]> = {};
   const formMessages: string[] = [];
 

@@ -3,6 +3,8 @@ import type { ZodError } from "zod";
 export type ActionState = {
   message?: string;
   fieldErrors?: Record<string, string[]>;
+  otpSent?: boolean;
+  email?: string;
 };
 
 function stringList(value: unknown): string[] {

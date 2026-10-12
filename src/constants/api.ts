@@ -5,6 +5,8 @@
 export const API_PATHS = {
   signup: "users/signup/",
   login: "users/login/",
+  otpRequest: "users/otp/request/",
+  otpVerify: "users/otp/verify/",
   refresh: "users/token/refresh/",
   logout: "users/token/blacklist/",
   me: "users/me/",

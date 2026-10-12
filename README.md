@@ -52,11 +52,14 @@ Cookie names live in `src/constants/auth.ts`. `src/proxy.ts` repeats those names
 | Action | Django |
 | --- | --- |
 | Sign up | `POST /users/signup/` |
-| Sign in | `POST /users/login/` with `{ email, password }` (`email` may be a username) |
+| Sign in with password | `POST /users/login/` with `{ email, password }` (`email` may be a username) |
+| Request login code | `POST /users/otp/request/` with `{ email, purpose: 0 }` |
+| Sign in with code | `POST /users/otp/verify/` with `{ email, purpose: 0, otp }` |
 | Current user | `GET /users/me/` |
 | Refresh | `POST /users/token/refresh/` |
 | Sign out | `POST /users/token/blacklist/` |
 | List, create, read, delete meetings | `/meetings/` |
+| Change room settings | `PATCH /meetings/{id}/` with `{ settings }` — host (`created_by`) only |
 
 Meeting status values match Django: `0` scheduled, `1` live, `2` ended, `3` cancelled. Limits and role codes are in `src/constants/meetings.ts`.
 

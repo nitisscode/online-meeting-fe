@@ -3,26 +3,20 @@ import { Suspense } from "react";
 
 import { CopyCode } from "@/components/meetings/copy-code";
 import { DeleteMeetingForm } from "@/components/meetings/delete-meeting-form";
+import { MeetingSettings } from "@/components/meetings/meeting-settings";
 import { MEETING_STATUS_LABEL } from "@/constants/meetings";
 import { formatDateTime } from "@/lib/format";
-import { getMeeting } from "@/lib/meetings/api";
+import { getCurrentUser, getMeeting } from "@/lib/meetings/api";
 
 export const metadata: Metadata = {
   title: "Meeting",
 };
 
-const settingLabels = [
-  ["allow_chat", "Chat"],
-  ["allow_screen_share", "Screen share"],
-  ["allow_recording", "Recording"],
-  ["waiting_room_enabled", "Waiting room"],
-  ["allow_raise_hand", "Raise hand"],
-] as const;
-
 async function MeetingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const meeting = await getMeeting(id);
+  const [meeting, user] = await Promise.all([getMeeting(id), getCurrentUser()]);
   const settings = meeting.settings;
+  const canEdit = user.id === meeting.created_by;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -58,14 +52,7 @@ async function MeetingDetail({ params }: { params: Promise<{ id: string }> }) {
           ) : null}
         </dl>
         {settings ? (
-          <ul className="grid gap-2 text-sm sm:grid-cols-2">
-            {settingLabels.map(([key, label]) => (
-              <li key={key} className="flex items-center justify-between rounded-xl bg-paper px-3 py-2">
-                <span>{label}</span>
-                <span className="font-medium">{settings[key] ? "On" : "Off"}</span>
-              </li>
-            ))}
-          </ul>
+          <MeetingSettings meetingId={meeting.id} settings={settings} canEdit={canEdit} />
         ) : null}
         <p className="text-sm text-ink-soft">
           Live audio and video are not connected here. This page manages the meeting record stored by Django.

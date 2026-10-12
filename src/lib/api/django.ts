@@ -1,6 +1,7 @@
 import "server-only";
 
 import { API_PATHS } from "@/constants/api";
+import { OTP_PURPOSE } from "@/constants/auth";
 import { DJANGO_TIMEOUT_MS } from "@/constants/security";
 import { ApiError, parseApiError } from "@/lib/api/errors";
 import { clearAuthCookies, readAccessToken, readRefreshToken, setAuthCookies } from "@/lib/auth/cookies";
@@ -175,6 +176,38 @@ export async function loginWithPassword(identifier: string, password: string): P
   if (response.status === 400 || response.status === 401 || response.status === 403) {
     throw new ApiError("Email, username, or password is incorrect.", 401);
   }
+
+  if (!response.ok) {
+    throw parseApiError(response.status, await readBody(response));
+  }
+
+  const body = (await readBody(response)) as Partial<TokenPair> | null;
+  if (!body?.access || !body.refresh) {
+    throw new ApiError("The meeting service returned an unreadable response.", 502);
+  }
+
+  await setAuthCookies({ access: body.access, refresh: body.refresh });
+}
+
+/** Asks Django to email a login code. The code in the response is discarded. */
+export async function requestLoginOtp(email: string): Promise<void> {
+  const response = await djangoRequest(API_PATHS.otpRequest, {
+    method: "POST",
+    body: JSON.stringify({ email, purpose: OTP_PURPOSE.Login }),
+  });
+
+  if (!response.ok) {
+    throw parseApiError(response.status, await readBody(response));
+  }
+
+  await response.arrayBuffer().catch(() => undefined);
+}
+
+export async function loginWithOtp(email: string, otp: string): Promise<void> {
+  const response = await djangoRequest(API_PATHS.otpVerify, {
+    method: "POST",
+    body: JSON.stringify({ email, purpose: OTP_PURPOSE.Login, otp }),
+  });
 
   if (!response.ok) {
     throw parseApiError(response.status, await readBody(response));

@@ -142,6 +142,22 @@ export async function createMeeting(input: CreateMeetingInput): Promise<MeetingD
   return parseData(meetingDetailSchema, data);
 }
 
+export async function updateMeetingSettings(
+  id: string,
+  settings: CreateMeetingInput["settings"],
+): Promise<MeetingDetail> {
+  const parsedId = z.uuid().safeParse(id);
+  if (!parsedId.success) {
+    throw new ApiError("That meeting id is not valid.", 400);
+  }
+
+  const data = await djangoFetch<unknown>(API_PATHS.meeting(parsedId.data), {
+    method: "PATCH",
+    body: JSON.stringify({ settings }),
+  });
+  return parseData(meetingDetailSchema, data);
+}
+
 export async function deleteMeetingById(id: string): Promise<void> {
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) {

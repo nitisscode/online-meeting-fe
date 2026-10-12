@@ -12,7 +12,7 @@ export default function LoginPage() {
     <section className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-4xl tracking-tight text-ink">Sign in</h1>
-        <p className="mt-2 text-sm text-ink-soft">Use the email or username on your account.</p>
+        <p className="mt-2 text-sm text-ink-soft">Use your password, or a code sent to your email.</p>
       </div>
       <Suspense fallback={<p className="text-sm text-ink-soft">Loading the form…</p>}>
         <LoginForm />

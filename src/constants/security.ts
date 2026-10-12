@@ -1,6 +1,8 @@
 /** Best-effort in-process limits. They reset on restart and are per server instance. */
 export const RATE_LIMIT = {
   login: { limit: 10, windowMs: 15 * 60 * 1000 },
+  otpRequest: { limit: 5, windowMs: 15 * 60 * 1000 },
+  otpVerify: { limit: 10, windowMs: 15 * 60 * 1000 },
   signup: { limit: 5, windowMs: 15 * 60 * 1000 },
   meetingWrite: { limit: 30, windowMs: 60 * 60 * 1000 },
 } as const;

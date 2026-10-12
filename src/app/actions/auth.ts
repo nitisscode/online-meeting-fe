@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 import { API_PATHS } from "@/constants/api";
 import { RATE_LIMIT } from "@/constants/security";
 import { ROUTES } from "@/constants/routes";
-import { djangoPublic, loginWithPassword, logoutSession } from "@/lib/api/django";
+import { djangoPublic, loginWithOtp, loginWithPassword, logoutSession, requestLoginOtp as sendLoginOtp } from "@/lib/api/django";
 import { ApiError } from "@/lib/api/errors";
 import { type ActionState, readString, validationState } from "@/lib/forms";
 import { assertRateLimit, rateLimitKey, RateLimitError } from "@/lib/http/rate-limit";
 import { safeInternalPath } from "@/lib/security/safe-path";
-import { loginSchema, signupSchema } from "@/lib/validation/auth";
+import { loginSchema, otpRequestSchema, otpVerifySchema, signupSchema } from "@/lib/validation/auth";
 
 export async function login(_state: ActionState | null, formData: FormData): Promise<ActionState> {
   const parsed = loginSchema.safeParse({
@@ -28,6 +28,69 @@ export async function login(_state: ActionState | null, formData: FormData): Pro
   } catch (error) {
     if (error instanceof RateLimitError || error instanceof ApiError) {
       return { message: error.message };
+    }
+    throw error;
+  }
+
+  redirect(safeInternalPath(readString(formData, "next"), ROUTES.dashboard));
+}
+
+export async function requestLoginOtp(
+  _state: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = otpRequestSchema.safeParse({
+    email: readString(formData, "email").trim().toLowerCase(),
+  });
+
+  if (!parsed.success) {
+    return validationState(parsed.error);
+  }
+
+  try {
+    await assertRateLimit(
+      await rateLimitKey("otp-request"),
+      RATE_LIMIT.otpRequest.limit,
+      RATE_LIMIT.otpRequest.windowMs,
+    );
+    await sendLoginOtp(parsed.data.email);
+  } catch (error) {
+    if (error instanceof RateLimitError || error instanceof ApiError) {
+      return { message: error.message };
+    }
+    throw error;
+  }
+
+  return {
+    otpSent: true,
+    email: parsed.data.email,
+    message: "We sent a 4-digit code to that email. It expires in 2 minutes.",
+  };
+}
+
+export async function verifyLoginOtp(
+  _state: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = otpVerifySchema.safeParse({
+    email: readString(formData, "email").trim().toLowerCase(),
+    otp: readString(formData, "otp").trim(),
+  });
+
+  if (!parsed.success) {
+    return { ...validationState(parsed.error), email: readString(formData, "email").trim().toLowerCase() };
+  }
+
+  try {
+    await assertRateLimit(
+      await rateLimitKey("otp-verify"),
+      RATE_LIMIT.otpVerify.limit,
+      RATE_LIMIT.otpVerify.windowMs,
+    );
+    await loginWithOtp(parsed.data.email, parsed.data.otp);
+  } catch (error) {
+    if (error instanceof RateLimitError || error instanceof ApiError) {
+      return { message: error.message, email: parsed.data.email, otpSent: true };
     }
     throw error;
   }

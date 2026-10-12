@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { AUTH_LIMITS } from "@/constants/auth";
+import { AUTH_LIMITS, OTP_LIMITS } from "@/constants/auth";
 
 const passwordSchema = z
   .string()
@@ -11,6 +11,20 @@ const passwordSchema = z
   .regex(/[A-Za-z]/, { error: "Include at least one letter." })
   .regex(/[0-9]/, { error: "Include at least one number." })
   .refine((value) => value.trim() === value, { error: "Do not start or end the password with a space." });
+
+export const otpRequestSchema = z.object({
+  email: z.email({ error: "Enter the email on your account." }).max(AUTH_LIMITS.emailMax),
+});
+
+export const otpVerifySchema = z.object({
+  email: z.email({ error: "Enter the email on your account." }).max(AUTH_LIMITS.emailMax),
+  otp: z
+    .string()
+    .trim()
+    .regex(new RegExp(`^\\d{${OTP_LIMITS.length}}$`), {
+      error: `Enter the ${OTP_LIMITS.length}-digit code from your email.`,
+    }),
+});
 
 export const loginSchema = z.object({
   identifier: z

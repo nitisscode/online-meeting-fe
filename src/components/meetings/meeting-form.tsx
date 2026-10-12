@@ -6,6 +6,7 @@ import { createMeetingAction } from "@/app/actions/meetings";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { MEETING_LIMITS } from "@/constants/meetings";
 
 const settings = [
   { name: "allow_chat", label: "Allow chat", defaultChecked: true },
@@ -18,7 +19,6 @@ const settings = [
 export function MeetingForm() {
   const [state, action, pending] = useActionState(createMeetingAction, null);
   const [timing, setTiming] = useState<"now" | "schedule">("now");
-  const [isPrivate, setIsPrivate] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
@@ -94,29 +94,15 @@ export function MeetingForm() {
         )}
       </fieldset>
 
-      <label className="flex items-center gap-2 text-sm text-ink">
-        <input
-          type="checkbox"
-          name="is_private"
-          value="yes"
-          checked={isPrivate}
-          onChange={(event) => setIsPrivate(event.target.checked)}
-        />
-        Private meeting
-      </label>
-      {isPrivate ? (
-        <Field
-          label="Passcode"
-          name="pass_code"
-          autoComplete="off"
-          required
-          value={passCode}
-          onChange={(event) => setPassCode(event.target.value)}
-          errors={errors?.pass_code}
-        />
-      ) : (
-        <input type="hidden" name="pass_code" value="" />
-      )}
+      <Field
+        label="Passcode"
+        name="pass_code"
+        autoComplete="off"
+        maxLength={MEETING_LIMITS.passCodeMax}
+        value={passCode}
+        onChange={(event) => setPassCode(event.target.value)}
+        errors={errors?.pass_code}
+      />
 
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-1 text-sm font-medium text-ink sm:col-span-2">Room settings</legend>

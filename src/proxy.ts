@@ -16,7 +16,11 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const signedIn = hasSession(request);
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/meetings");
+  const isProtected =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/meetings") ||
+    pathname === "/join" ||
+    pathname.startsWith("/room");
 
   if (isProtected && !signedIn) {
     const url = request.nextUrl.clone();
@@ -30,9 +34,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return NextResponse.next();
+  const headers = new Headers(request.headers);
+  headers.set("x-om-path", `${pathname}${request.nextUrl.search}`);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/meetings/:path*", "/login", "/signup"],
+  matcher: ["/dashboard/:path*", "/meetings/:path*", "/join", "/room/:path*", "/login", "/signup"],
 };

@@ -1,11 +1,16 @@
 import "server-only";
 
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import { API_PATHS } from "@/constants/api";
 import { OTP_PURPOSE } from "@/constants/auth";
+import { ROUTES } from "@/constants/routes";
 import { DJANGO_TIMEOUT_MS } from "@/constants/security";
 import { ApiError, parseApiError } from "@/lib/api/errors";
 import { clearAuthCookies, readAccessToken, readRefreshToken, setAuthCookies } from "@/lib/auth/cookies";
 import { env } from "@/lib/env";
+import { safeInternalPath } from "@/lib/security/safe-path";
 
 type TokenPair = {
   access: string;
@@ -18,21 +23,21 @@ function djangoUrl(path: string): string {
 }
 
 async function djangoRequest(path: string, init: RequestInit, token?: string): Promise<Response> {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
+  const requestHeaders = new Headers(init.headers);
+  requestHeaders.set("Accept", "application/json");
 
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
+  if (init.body && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
   }
 
   if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+    requestHeaders.set("Authorization", `Bearer ${token}`);
   }
 
   try {
     return await fetch(djangoUrl(path), {
       ...init,
-      headers,
+      headers: requestHeaders,
       cache: "no-store",
       signal: AbortSignal.timeout(DJANGO_TIMEOUT_MS),
     });
@@ -91,6 +96,25 @@ async function refreshTokens(): Promise<boolean> {
   return refreshInFlight;
 }
 
+/** Exchanges a refresh token. Does not write cookies. */
+export async function rotateRefreshToken(refresh: string): Promise<{ access: string; refresh: string }> {
+  const response = await djangoRequest(API_PATHS.refresh, {
+    method: "POST",
+    body: JSON.stringify({ refresh }),
+  });
+
+  if (!response.ok) {
+    throw parseApiError(response.status, await readBody(response));
+  }
+
+  const body = (await readBody(response)) as Partial<TokenPair> | null;
+  if (!body?.access) {
+    throw new ApiError("The meeting service returned an unreadable response.", 502);
+  }
+
+  return { access: body.access, refresh: body.refresh ?? refresh };
+}
+
 async function refreshTokensOnce(): Promise<boolean> {
   const refresh = await readRefreshToken();
   if (!refresh) {
@@ -98,28 +122,35 @@ async function refreshTokensOnce(): Promise<boolean> {
     return false;
   }
 
-  const response = await djangoRequest(API_PATHS.refresh, {
-    method: "POST",
-    body: JSON.stringify({ refresh }),
-  });
-
-  if (!response.ok) {
+  try {
+    await setAuthCookies(await rotateRefreshToken(refresh));
+    return true;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 503) {
+      throw error;
+    }
     await clearAuthCookies();
     return false;
   }
+}
 
-  const body = (await readBody(response)) as Partial<TokenPair> | null;
-  if (!body?.access) {
-    await clearAuthCookies();
-    return false;
+/**
+ * Page renders cannot set cookies. Send the browser to the refresh route,
+ * which is allowed to rotate or clear the session and then come back.
+ */
+async function renewAccessToken(): Promise<string> {
+  const headerStore = await headers();
+  if (headerStore.has("next-action")) {
+    const refreshed = await refreshTokens();
+    const token = refreshed ? await readAccessToken() : undefined;
+    if (!token) {
+      throw new ApiError("Your session has ended. Sign in again.", 401);
+    }
+    return token;
   }
 
-  await setAuthCookies({
-    access: body.access,
-    refresh: body.refresh ?? refresh,
-  });
-
-  return true;
+  const next = safeInternalPath(headerStore.get("x-om-path"), ROUTES.dashboard);
+  redirect(`${ROUTES.sessionRefresh}?next=${encodeURIComponent(next)}`);
 }
 
 /** Calls Django without a session. Used for signup and login. */
@@ -129,31 +160,19 @@ export async function djangoPublic<T>(path: string, init: RequestInit): Promise<
 }
 
 /**
- * Calls Django with the access cookie. On 401, rotates the refresh token once
- * and retries. Tokens stay on the server.
+ * Calls Django with the access cookie. A page render that needs a new access
+ * token redirects to the session refresh route. A Server Action rotates it here.
  */
 export async function djangoFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   let token = await readAccessToken();
   if (!token) {
-    const refreshed = await refreshTokens();
-    if (!refreshed) {
-      throw new ApiError("Your session has ended. Sign in again.", 401);
-    }
-    token = await readAccessToken();
-  }
-
-  if (!token) {
-    throw new ApiError("Your session has ended. Sign in again.", 401);
+    token = await renewAccessToken();
   }
 
   let response = await djangoRequest(path, init, token);
   if (response.status === 401) {
-    const refreshed = await refreshTokens();
-    const nextToken = refreshed ? await readAccessToken() : undefined;
-    if (!nextToken) {
-      throw new ApiError("Your session has ended. Sign in again.", 401);
-    }
-    response = await djangoRequest(path, init, nextToken);
+    token = await renewAccessToken();
+    response = await djangoRequest(path, init, token);
   }
 
   return parseResponse<T>(response);

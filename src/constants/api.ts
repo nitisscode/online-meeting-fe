@@ -12,4 +12,8 @@ export const API_PATHS = {
   me: "users/me/",
   meetings: "meetings/",
   meeting: (id: string) => `meetings/${id}/`,
+  meetingStart: (id: string) => `meetings/${id}/start/`,
+  meetingEnd: (id: string) => `meetings/${id}/end/`,
+  joinMeeting: "meetings/join/",
+  meetingRoom: (id: string) => `meetings/${id}/participants/`,
 } as const;

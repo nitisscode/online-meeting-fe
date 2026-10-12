@@ -13,9 +13,15 @@ export async function WorkspaceHeader() {
     <header className="border-b border-line bg-sand/80">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-4">
         <Brand href={ROUTES.dashboard} />
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <ThemeToggle />
           <p className="hidden text-sm text-ink-soft sm:block">{displayName(user)}</p>
+          <Link href={ROUTES.dashboard} className="text-sm font-semibold text-pine">
+            Meetings
+          </Link>
+          <Link href={ROUTES.joinMeeting} className="text-sm font-semibold text-pine">
+            Join
+          </Link>
           <Link href={ROUTES.newMeeting} className="text-sm font-semibold text-pine">
             New meeting
           </Link>

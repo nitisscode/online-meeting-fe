@@ -2,7 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
-import { MEETING_LIMITS, MeetingStatus } from "@/constants/meetings";
+import { MEETING_LIMITS } from "@/constants/meetings";
+import { parseAppDateTime } from "@/lib/format";
 
 export const createMeetingSchema = z
   .object({
@@ -19,7 +20,6 @@ export const createMeetingSchema = z
       }),
     timing: z.enum(["now", "schedule"], { error: "Choose when the meeting starts." }),
     scheduled_at: z.string().trim(),
-    is_private: z.boolean(),
     pass_code: z
       .string()
       .trim()
@@ -33,8 +33,8 @@ export const createMeetingSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.timing === "schedule") {
-      const time = new Date(value.scheduled_at);
-      if (!value.scheduled_at || Number.isNaN(time.getTime())) {
+      const time = parseAppDateTime(value.scheduled_at);
+      if (!time) {
         ctx.addIssue({
           code: "custom",
           path: ["scheduled_at"],
@@ -47,14 +47,6 @@ export const createMeetingSchema = z
           message: "Choose a time in the future.",
         });
       }
-    }
-
-    if (value.is_private && value.pass_code.length < 4) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["pass_code"],
-        message: "Private meetings need a passcode of at least 4 characters.",
-      });
     }
   });
 
@@ -70,16 +62,28 @@ export const meetingSettingsSchema = z.object({
 
 export type MeetingSettingsInput = z.infer<typeof meetingSettingsSchema>;
 
+export const joinMeetingSchema = z.object({
+  meeting_code: z
+    .string()
+    .trim()
+    .min(1, { error: "Enter the meeting code." })
+    .max(MEETING_LIMITS.meetingCodeLength, { error: `Use at most ${MEETING_LIMITS.meetingCodeLength} characters.` })
+    .regex(/^[A-Z0-9]+$/, { error: "Use letters and numbers only." }),
+  pass_code: z
+    .string()
+    .trim()
+    .max(MEETING_LIMITS.passCodeMax, { error: `Use at most ${MEETING_LIMITS.passCodeMax} characters.` })
+    .regex(/^[A-Za-z0-9]*$/, { error: "Use letters and numbers only." }),
+});
+
 export function toCreateMeetingInput(value: CreateMeetingForm) {
-  const startNow = value.timing === "now";
+  const passCode = value.pass_code.length > 0 ? value.pass_code : null;
   return {
     title: value.title,
     description: value.description,
-    status: startNow ? MeetingStatus.Live : MeetingStatus.Scheduled,
-    scheduled_at: startNow ? null : new Date(value.scheduled_at).toISOString(),
-    started_at: startNow ? new Date().toISOString() : null,
-    is_private: value.is_private,
-    pass_code: value.pass_code.length > 0 ? value.pass_code : null,
+    scheduled_at: value.timing === "schedule" ? parseAppDateTime(value.scheduled_at)?.toISOString() ?? null : null,
+    is_private: passCode !== null,
+    pass_code: passCode,
     settings: {
       allow_chat: value.allow_chat,
       allow_screen_share: value.allow_screen_share,

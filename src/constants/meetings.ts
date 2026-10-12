@@ -31,6 +31,8 @@ export const ConnectionStatus = {
   Connecting: 0,
   Connected: 1,
   Disconnected: 2,
+  Left: 3,
+  Invited: 4,
 } as const;
 
 /** Field lengths from the Meeting model. */

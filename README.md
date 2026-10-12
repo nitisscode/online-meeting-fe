@@ -59,11 +59,15 @@ Cookie names live in `src/constants/auth.ts`. `src/proxy.ts` repeats those names
 | Refresh | `POST /users/token/refresh/` |
 | Sign out | `POST /users/token/blacklist/` |
 | List, create, read, delete meetings | `/meetings/` |
+| Start a meeting | `POST /meetings/{id}/start/` |
+| End a meeting | `POST /meetings/{id}/end/` |
 | Change room settings | `PATCH /meetings/{id}/` with `{ settings }` — host (`created_by`) only |
+| Join a live meeting | `POST /meetings/join/` with `{ meeting_code, pass_code }` |
+| Room and joined people | `GET /meetings/{id}/participants/` — host or a connected participant |
 
 Meeting status values match Django: `0` scheduled, `1` live, `2` ended, `3` cancelled. Limits and role codes are in `src/constants/meetings.ts`.
 
-The participant routes are not called. The Django viewset reads `meeting_id` in one method and `meeting_pk` in another, so that API is not stable enough to build against yet.
+`GET /meetings/{id}/participants/` is the room payload for someone who has joined. The separate `participants` viewset is still unused: it reads `meeting_id` in one method and `meeting_pk` in another.
 
 ## Security
 

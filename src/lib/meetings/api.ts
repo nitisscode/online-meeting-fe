@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 
 import { API_PATHS } from "@/constants/api";
-import { MEETING_LIMITS, MeetingStatus } from "@/constants/meetings";
+import { MEETING_LIMITS } from "@/constants/meetings";
 import { ROUTES } from "@/constants/routes";
 import { djangoFetch } from "@/lib/api/django";
 import { ApiError } from "@/lib/api/errors";
@@ -56,9 +56,7 @@ export type MeetingDetail = z.infer<typeof meetingDetailSchema>;
 export type CreateMeetingInput = {
   title: string;
   description?: string;
-  status: (typeof MeetingStatus)[keyof typeof MeetingStatus];
   scheduled_at: string | null;
-  started_at: string | null;
   is_private: boolean;
   pass_code: string | null;
   settings: {
@@ -156,6 +154,70 @@ export async function updateMeetingSettings(
     body: JSON.stringify({ settings }),
   });
   return parseData(meetingDetailSchema, data);
+}
+
+const roomParticipantSchema = z.object({
+  id: z.uuid(),
+  user: userSchema,
+  role: z.number().int(),
+  connection_status: z.number().int().nullable(),
+  joined_at: z.string().nullable(),
+  left_at: z.string().nullable(),
+});
+
+const meetingRoomSchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  meeting_code: z.string(),
+  status: z.number().int(),
+  settings: meetingSettingsSchema,
+  participants: z.array(roomParticipantSchema),
+});
+
+export type MeetingRoom = z.infer<typeof meetingRoomSchema>;
+
+export async function joinMeeting(input: { meeting_code: string; pass_code: string | null }): Promise<MeetingRoom> {
+  const data = await djangoFetch<unknown>(API_PATHS.joinMeeting, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return parseData(meetingRoomSchema, data);
+}
+
+export async function getMeetingRoom(id: string): Promise<MeetingRoom> {
+  const parsedId = z.uuid().safeParse(id);
+  if (!parsedId.success) {
+    notFound();
+  }
+
+  try {
+    const data = await djangoFetch<unknown>(API_PATHS.meetingRoom(parsedId.data));
+    return parseData(meetingRoomSchema, data);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    if (error instanceof ApiError && error.status === 401) {
+      redirect(ROUTES.login);
+    }
+    throw error;
+  }
+}
+
+export async function startMeeting(id: string): Promise<void> {
+  const parsedId = z.uuid().safeParse(id);
+  if (!parsedId.success) {
+    throw new ApiError("That meeting id is not valid.", 400);
+  }
+  await djangoFetch<unknown>(API_PATHS.meetingStart(parsedId.data), { method: "POST" });
+}
+
+export async function endMeeting(id: string): Promise<void> {
+  const parsedId = z.uuid().safeParse(id);
+  if (!parsedId.success) {
+    throw new ApiError("That meeting id is not valid.", 400);
+  }
+  await djangoFetch<unknown>(API_PATHS.meetingEnd(parsedId.data), { method: "POST" });
 }
 
 export async function deleteMeetingById(id: string): Promise<void> {

@@ -5,6 +5,7 @@ type FieldProps = {
   name: string;
   type?: string;
   autoComplete?: string;
+  maxLength?: number;
   required?: boolean;
   errors?: string[];
   value?: string;
@@ -16,6 +17,7 @@ export function Field({
   name,
   type = "text",
   autoComplete,
+  maxLength,
   required = false,
   errors,
   value,
@@ -33,6 +35,7 @@ export function Field({
         name={name}
         type={type}
         autoComplete={autoComplete}
+        maxLength={maxLength}
         required={required}
         value={value}
         onChange={onChange}

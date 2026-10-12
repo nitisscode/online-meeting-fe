@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { CopyCode } from "@/components/meetings/copy-code";
 import { DeleteMeetingForm } from "@/components/meetings/delete-meeting-form";
+import { MeetingControls } from "@/components/meetings/meeting-controls";
 import { MeetingSettings } from "@/components/meetings/meeting-settings";
 import { MEETING_STATUS_LABEL } from "@/constants/meetings";
 import { formatDateTime } from "@/lib/format";
@@ -44,13 +45,14 @@ async function MeetingDetail({ params }: { params: Promise<{ id: string }> }) {
             <dt className="text-ink-soft">Privacy</dt>
             <dd className="font-medium text-ink">{meeting.is_private ? "Private" : "Open"}</dd>
           </div>
-          {meeting.is_private && meeting.pass_code ? (
+          {meeting.pass_code ? (
             <div>
               <dt className="text-ink-soft">Passcode</dt>
               <dd className="font-mono font-medium text-ink">{meeting.pass_code}</dd>
             </div>
           ) : null}
         </dl>
+        {canEdit ? <MeetingControls meetingId={meeting.id} status={meeting.status} /> : null}
         {settings ? (
           <MeetingSettings meetingId={meeting.id} settings={settings} canEdit={canEdit} />
         ) : null}

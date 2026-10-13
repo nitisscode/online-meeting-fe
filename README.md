@@ -55,6 +55,8 @@ Cookie names live in `src/constants/auth.ts`. `src/proxy.ts` repeats those names
 | Sign in with password | `POST /users/login/` with `{ email, password }` (`email` may be a username) |
 | Request login code | `POST /users/otp/request/` with `{ email, purpose: 0 }` |
 | Sign in with code | `POST /users/otp/verify/` with `{ email, purpose: 0, otp }` |
+| Request password reset | `POST /users/forgot-password/` with `{ email }` |
+| Reset password | `POST /users/reset-password/` with `{ email, purpose: 2, otp, new_password, confirm_password }` |
 | Current user | `GET /users/me/` |
 | Refresh | `POST /users/token/refresh/` |
 | Sign out | `POST /users/token/blacklist/` |

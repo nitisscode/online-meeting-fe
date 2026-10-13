@@ -22,10 +22,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Online Meeting",
-    template: "%s · Online Meeting",
+    default: "Meetly",
+    template: "%s · Meetly",
   },
   description: "Create an account, schedule meetings, and manage the ones you host.",
+  icons: { icon: "/meetly.svg" },
 };
 
 export const viewport: Viewport = {

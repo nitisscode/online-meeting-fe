@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 import { API_PATHS } from "@/constants/api";
 import { RATE_LIMIT } from "@/constants/security";
 import { ROUTES } from "@/constants/routes";
-import { djangoPublic, loginWithOtp, loginWithPassword, logoutSession, requestLoginOtp as sendLoginOtp } from "@/lib/api/django";
+import { djangoPublic, loginWithOtp, loginWithPassword, logoutSession, requestLoginOtp as sendLoginOtp, requestPasswordReset as sendPasswordReset, resetPassword as submitPasswordReset } from "@/lib/api/django";
 import { ApiError } from "@/lib/api/errors";
 import { type ActionState, readString, validationState } from "@/lib/forms";
 import { assertRateLimit, rateLimitKey, RateLimitError } from "@/lib/http/rate-limit";
 import { safeInternalPath } from "@/lib/security/safe-path";
-import { loginSchema, otpRequestSchema, otpVerifySchema, signupSchema } from "@/lib/validation/auth";
+import { loginSchema, otpRequestSchema, otpVerifySchema, resetPasswordSchema, signupSchema } from "@/lib/validation/auth";
 
 export async function login(_state: ActionState | null, formData: FormData): Promise<ActionState> {
   const parsed = loginSchema.safeParse({
@@ -96,6 +96,72 @@ export async function verifyLoginOtp(
   }
 
   redirect(safeInternalPath(readString(formData, "next"), ROUTES.dashboard));
+}
+
+export async function requestPasswordReset(
+  _state: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = otpRequestSchema.safeParse({
+    email: readString(formData, "email").trim().toLowerCase(),
+  });
+
+  if (!parsed.success) {
+    return validationState(parsed.error);
+  }
+
+  try {
+    await assertRateLimit(
+      await rateLimitKey("forgot-password"),
+      RATE_LIMIT.otpRequest.limit,
+      RATE_LIMIT.otpRequest.windowMs,
+    );
+    await sendPasswordReset(parsed.data.email);
+  } catch (error) {
+    if (error instanceof RateLimitError || error instanceof ApiError) {
+      return { message: error.message };
+    }
+    throw error;
+  }
+
+  return {
+    otpSent: true,
+    email: parsed.data.email,
+    message: "We sent a 4-digit code to that email. It expires in 2 minutes.",
+  };
+}
+
+export async function resetPassword(
+  _state: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const email = readString(formData, "email").trim().toLowerCase();
+  const parsed = resetPasswordSchema.safeParse({
+    email,
+    otp: readString(formData, "otp").trim(),
+    new_password: readString(formData, "new_password"),
+    confirm_password: readString(formData, "confirm_password"),
+  });
+
+  if (!parsed.success) {
+    return { ...validationState(parsed.error), email, otpSent: true };
+  }
+
+  try {
+    await assertRateLimit(
+      await rateLimitKey("reset-password"),
+      RATE_LIMIT.otpVerify.limit,
+      RATE_LIMIT.otpVerify.windowMs,
+    );
+    await submitPasswordReset(parsed.data);
+  } catch (error) {
+    if (error instanceof RateLimitError || error instanceof ApiError) {
+      return { message: error.message, email, otpSent: true };
+    }
+    throw error;
+  }
+
+  redirect(`${ROUTES.login}?reset=1`);
 }
 
 export async function signup(_state: ActionState | null, formData: FormData): Promise<ActionState> {

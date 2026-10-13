@@ -69,5 +69,27 @@ export const signupSchema = z
     }
   });
 
+export const resetPasswordSchema = z
+  .object({
+    email: z.email({ error: "Enter the email on your account." }).max(AUTH_LIMITS.emailMax),
+    otp: z
+      .string()
+      .trim()
+      .regex(new RegExp(`^\\d{${OTP_LIMITS.length}}$`), {
+        error: `Enter the ${OTP_LIMITS.length}-digit code from your email.`,
+      }),
+    new_password: passwordSchema,
+    confirm_password: z.string().min(1, { error: "Confirm your password." }),
+  })
+  .superRefine((value, ctx) => {
+    if (value.new_password !== value.confirm_password) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["confirm_password"],
+        message: "Passwords do not match.",
+      });
+    }
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;

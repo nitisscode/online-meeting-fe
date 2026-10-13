@@ -28,6 +28,7 @@ export function LoginForm() {
   const [handledRequest, setHandledRequest] = useState<typeof requestState>(null);
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "";
+  const passwordReset = searchParams.get("reset") === "1";
   const sentEmail = requestState?.email ?? verifyState?.email ?? email;
 
   if (requestState?.otpSent && requestState.email && requestState !== handledRequest) {
@@ -48,6 +49,11 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col gap-4">
+      {passwordReset ? (
+        <p className="rounded-xl border border-pine/30 bg-pine/10 px-3 py-2 text-sm text-ink">
+          Password updated. Sign in with the new password.
+        </p>
+      ) : null}
       <div className="grid grid-cols-2 rounded-full border border-line bg-sand p-1 text-sm">
         <button
           type="button"
@@ -90,11 +96,15 @@ export function LoginForm() {
             onChange={(event) => setPassword(event.target.value)}
             errors={passwordState?.fieldErrors?.password}
           />
+          <Link href={ROUTES.forgotPassword} className="self-start text-sm font-medium text-pine">
+            Forgot password?
+          </Link>
           <Button type="submit" pending={passwordPending}>
             Sign in
           </Button>
         </form>
       ) : codeSent ? (
+        <>
         <form action={verifyAction} className="flex flex-col gap-4" noValidate>
           <input type="hidden" name="next" value={next} />
           <input type="hidden" name="email" value={sentEmail} />
@@ -111,20 +121,23 @@ export function LoginForm() {
           <Button type="submit" pending={verifyPending}>
             Sign in
           </Button>
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <button type="button" className="font-medium text-ink" onClick={() => setCodeSent(false)}>
-              Use a different email
-            </button>
+        </form>
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <button type="button" className="font-medium text-ink" onClick={() => setCodeSent(false)}>
+            Use a different email
+          </button>
+          <form action={requestAction}>
+            <input type="hidden" name="email" value={sentEmail} />
             <button
               type="submit"
-              formAction={requestAction}
               disabled={requestPending || cooldown > 0}
-              className="font-medium text-pine disabled:opacity-60"
+              className="font-medium text-pine disabled:cursor-not-allowed disabled:text-ink-soft disabled:pointer-events-none"
             >
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+        </>
       ) : (
         <form action={requestAction} className="flex flex-col gap-4" noValidate>
           <Alert message={requestState?.message} />
@@ -138,8 +151,8 @@ export function LoginForm() {
             onChange={(event) => setEmail(event.target.value)}
             errors={requestState?.fieldErrors?.email}
           />
-          <Button type="submit" pending={requestPending}>
-            Send code
+          <Button type="submit" pending={requestPending} disabled={cooldown > 0}>
+            {cooldown > 0 ? `Send code in ${cooldown}s` : "Send code"}
           </Button>
         </form>
       )}

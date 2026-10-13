@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 56" fill="none">
+  <defs>
+    <linearGradient id="meetly-frame" x1="10" y1="4" x2="46" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3C8DFF"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="meetly-lens" x1="60" y1="16" x2="86" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="meetly-green" x1="22" y1="18" x2="22" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3DDC97"/>
+      <stop offset="1" stop-color="#12B981"/>
+    </linearGradient>
+    <linearGradient id="meetly-blue" x1="34" y1="14" x2="34" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5B9BFF"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="meetly-purple" x1="47" y1="20" x2="47" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C4B5FD"/>
+      <stop offset="1" stop-color="#7C5CE0"/>
+    </linearGradient>
+    <clipPath id="meetly-screen">
+      <rect x="9" y="9" width="48" height="38" rx="8"/>
+    </clipPath>
+  </defs>
+  <rect x="9" y="9" width="48" height="38" rx="8" fill="#07090F"/>
+  <g clip-path="url(#meetly-screen)">
+    <circle cx="21.5" cy="25" r="4.6" fill="url(#meetly-green)"/>
+    <ellipse cx="21.5" cy="42" rx="8" ry="10" fill="url(#meetly-green)"/>
+    <circle cx="46" cy="26.5" r="4" fill="url(#meetly-purple)"/>
+    <ellipse cx="46" cy="42" rx="7" ry="9" fill="url(#meetly-purple)"/>
+    <circle cx="33.5" cy="23" r="5.8" fill="url(#meetly-blue)"/>
+    <ellipse cx="33.5" cy="44" rx="12" ry="13" fill="url(#meetly-blue)"/>
+  </g>
+  <rect x="5.25" y="5.25" width="55.5" height="45.5" rx="13" stroke="url(#meetly-frame)" stroke-width="5"/>
+  <path d="M57 20.5 73 15.5c5-1.8 9 1.2 9 5.6v13.8c0 4.4-4 7.4-9 5.6L57 35.5z" fill="url(#meetly-lens)"/>
+</svg>

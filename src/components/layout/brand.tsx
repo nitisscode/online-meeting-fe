@@ -5,10 +5,9 @@ import { ROUTES } from "@/constants/routes";
 export function Brand({ href = ROUTES.home }: { href?: string }) {
   return (
     <Link href={href} className="inline-flex items-center gap-2 text-ink">
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-pine text-sm font-semibold text-foam">
-        Om
-      </span>
-      <span className="font-display text-lg tracking-tight">Online Meeting</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/meetly.svg" alt="" className="h-8 w-auto" />
+      <span className="text-lg font-semibold tracking-tight">Meetly</span>
     </Link>
   );
 }

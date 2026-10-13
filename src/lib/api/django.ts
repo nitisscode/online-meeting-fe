@@ -222,6 +222,44 @@ export async function requestLoginOtp(email: string): Promise<void> {
   await response.arrayBuffer().catch(() => undefined);
 }
 
+/** Asks Django to email a password-reset code. The response body is discarded. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await djangoRequest(API_PATHS.forgotPassword, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw parseApiError(response.status, await readBody(response));
+  }
+
+  await response.arrayBuffer().catch(() => undefined);
+}
+
+export async function resetPassword(input: {
+  email: string;
+  otp: string;
+  new_password: string;
+  confirm_password: string;
+}): Promise<void> {
+  const response = await djangoRequest(API_PATHS.resetPassword, {
+    method: "POST",
+    body: JSON.stringify({
+      email: input.email,
+      purpose: OTP_PURPOSE.PasswordReset,
+      otp: input.otp,
+      new_password: input.new_password,
+      confirm_password: input.confirm_password,
+    }),
+  });
+
+  if (!response.ok) {
+    throw parseApiError(response.status, await readBody(response));
+  }
+
+  await response.arrayBuffer().catch(() => undefined);
+}
+
 export async function loginWithOtp(email: string, otp: string): Promise<void> {
   const response = await djangoRequest(API_PATHS.otpVerify, {
     method: "POST",

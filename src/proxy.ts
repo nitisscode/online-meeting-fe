@@ -15,7 +15,7 @@ function hasSession(request: NextRequest): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const signedIn = hasSession(request);
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password";
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/meetings") ||
@@ -40,5 +40,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/meetings/:path*", "/join", "/room/:path*", "/login", "/signup"],
+  matcher: ["/dashboard/:path*", "/meetings/:path*", "/join", "/room/:path*", "/login", "/signup", "/forgot-password"],
 };

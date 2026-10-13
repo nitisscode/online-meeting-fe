@@ -3,6 +3,7 @@ export const ROUTES = {
   home: "/",
   login: "/login",
   signup: "/signup",
+  forgotPassword: "/forgot-password",
   sessionRefresh: "/api/session/refresh",
   dashboard: "/dashboard",
   newMeeting: "/meetings/new",

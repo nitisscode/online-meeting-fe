@@ -66,6 +66,7 @@ Cookie names live in `src/constants/auth.ts`. `src/proxy.ts` repeats those names
 | Change room settings | `PATCH /meetings/{id}/` with `{ settings }` — host (`created_by`) only |
 | Join a live meeting | `POST /meetings/join/` with `{ meeting_code, pass_code }` |
 | Room and joined people | `GET /meetings/{id}/participants/` — host or a connected participant |
+| Meeting chat | `GET /chat/messages/?conversation_id=` and `POST /chat/messages/` with `{ conversation, content, content_type: 1 }` |
 
 Meeting status values match Django: `0` scheduled, `1` live, `2` ended, `3` cancelled. Limits and role codes are in `src/constants/meetings.ts`.
 

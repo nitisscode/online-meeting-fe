@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { loadMeetingRoom } from "@/app/actions/meetings";
+import { MeetingChat } from "@/components/meetings/meeting-chat";
 import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon, SpeakerIcon } from "@/components/meetings/room-icons";
 import { PARTICIPANT_ROLE_LABEL } from "@/constants/meetings";
 import { ROUTES } from "@/constants/routes";
-import { displayName } from "@/lib/format";
+import { displayName, formatElapsed } from "@/lib/format";
 
 type RoomUser = {
   id: string;
@@ -27,6 +28,7 @@ export type RoomData = {
   id: string;
   title: string;
   meeting_code: string;
+  started_at: string | null;
   settings: {
     allow_chat: boolean;
     allow_screen_share: boolean;
@@ -50,6 +52,9 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
   const [sharing, setSharing] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const [status, setStatus] = useState<string | undefined>();
+  const [elapsed, setElapsed] = useState("00:00:00");
+  const [panelWidth, setPanelWidth] = useState(320);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<MediaStream | null>(null);
   const screenRef = useRef<MediaStream | null>(null);
@@ -60,6 +65,27 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
       stopStream(screenRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const started = room.started_at ? new Date(room.started_at).getTime() : Date.now();
+    const origin = Number.isNaN(started) ? Date.now() : started;
+
+    function tick() {
+      setElapsed(formatElapsed(Date.now() - origin));
+    }
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [room.started_at]);
+
+  function resizePanel(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) {
+      return;
+    }
+    const next = dragRef.current.startWidth + (dragRef.current.startX - event.clientX);
+    setPanelWidth(Math.min(560, Math.max(260, next)));
+  }
 
   function show(stream: MediaStream | null) {
     if (videoRef.current) {
@@ -176,18 +202,21 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-line px-4 py-3">
         <div>
           <p className="text-xs font-semibold tracking-wide text-pine uppercase">Live</p>
           <h1 className="font-display text-2xl text-ink">{room.title}</h1>
         </div>
+        <p className="font-mono text-lg tabular-nums text-ink" aria-label="Meeting time">
+          {elapsed}
+        </p>
         <p className="font-mono text-sm tracking-widest text-ink-soft">{room.meeting_code}</p>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <div className="flex min-h-[420px] flex-1 flex-col">
-          <div className="relative m-4 flex flex-1 items-center justify-center overflow-hidden rounded-2xl bg-ink">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="relative m-4 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-ink">
             <video
               ref={videoRef}
               autoPlay
@@ -203,7 +232,7 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
             )}
           </div>
           {status ? <p className="px-4 pb-2 text-sm text-danger">{status}</p> : null}
-          <div className="flex flex-wrap items-center justify-center gap-2 px-4 pb-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 px-4 pb-4">
             <button type="button" title={micOn ? "Mic on" : "Mic off"} aria-label={micOn ? "Mic on" : "Mic off"} aria-pressed={micOn} onClick={toggleMic} className={controlButtonClass(controlClass(micOn, !micOn))}>
               <MicIcon off={!micOn} />
             </button>
@@ -264,26 +293,44 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
         </div>
 
         {panel ? (
-          <aside className="w-full border-t border-line bg-sand p-4 lg:w-80 lg:border-t-0 lg:border-l">
-            {panel === "people" ? (
-              <div className="flex flex-col gap-3">
-                <h2 className="font-display text-xl text-ink">People</h2>
-                <ul className="flex flex-col gap-2">
-                  {room.participants.map((participant) => (
-                    <li key={participant.id} className="flex items-center justify-between gap-3 rounded-xl bg-paper px-3 py-2">
-                      <span className="text-sm text-ink">{displayName(participant.user)}</span>
-                      <span className="text-xs text-ink-soft">{PARTICIPANT_ROLE_LABEL[participant.role] ?? "Participant"}</span>
-                    </li>
-                  ))}
-                </ul>
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize side panel"
+              className="hidden w-1.5 shrink-0 cursor-col-resize bg-line lg:block"
+              onPointerDown={(event) => {
+                dragRef.current = { startX: event.clientX, startWidth: panelWidth };
+                event.currentTarget.setPointerCapture(event.pointerId);
+              }}
+              onPointerMove={resizePanel}
+              onPointerUp={() => {
+                dragRef.current = null;
+              }}
+            />
+            <aside
+              className="flex max-h-[42%] min-h-0 w-full flex-col overflow-hidden border-t border-line bg-sand p-4 lg:max-h-none lg:shrink-0 lg:border-t-0 lg:border-l lg:w-[var(--panel-width)]"
+              style={{ "--panel-width": `${panelWidth}px` } as React.CSSProperties}
+            >
+              <div className="flex min-h-0 flex-1 flex-col">
+                {panel === "people" ? (
+                  <div className="flex min-h-0 flex-1 flex-col gap-3">
+                    <h2 className="font-display text-xl text-ink">People</h2>
+                    <ul className="flex flex-col gap-2 overflow-y-auto">
+                      {room.participants.map((participant) => (
+                        <li key={participant.id} className="flex items-center justify-between gap-3 rounded-xl bg-paper px-3 py-2">
+                          <span className="text-sm text-ink">{displayName(participant.user)}</span>
+                          <span className="text-xs text-ink-soft">{PARTICIPANT_ROLE_LABEL[participant.role] ?? "Participant"}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <MeetingChat meetingId={room.id} />
+                )}
               </div>
-            ) : (
-              <div className="flex h-full flex-col gap-3">
-                <h2 className="font-display text-xl text-ink">Chat</h2>
-                <p className="text-sm text-ink-soft">The meeting service does not store chat messages yet.</p>
-              </div>
-            )}
-          </aside>
+            </aside>
+          </>
         ) : null}
       </div>
     </div>

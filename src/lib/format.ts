@@ -80,6 +80,38 @@ export function parseAppDateTime(value: string): Date | null {
   return date;
 }
 
+export function formatElapsed(milliseconds: number): string {
+  const total = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+export function formatRelativeTime(value: string, now = Date.now()): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "now";
+  }
+
+  const minutes = Math.floor(Math.max(0, now - date.getTime()) / 60000);
+  if (minutes < 1) {
+    return "now";
+  }
+  if (minutes < 60) {
+    return `${minutes} min ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "1 day ago" : `${days} days ago`;
+}
+
 export function formatDateTime(value: string | null): string {
   if (!value) {
     return "Not set";

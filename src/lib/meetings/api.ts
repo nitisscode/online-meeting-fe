@@ -171,6 +171,7 @@ const meetingRoomSchema = z.object({
   meeting_code: z.string(),
   status: z.number().int(),
   started_at: z.string().nullable(),
+  conversation_id: z.uuid().nullable(),
   settings: meetingSettingsSchema,
   participants: z.array(roomParticipantSchema),
 });

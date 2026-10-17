@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { loadMeetingRoom } from "@/app/actions/meetings";
 import { MeetingChat } from "@/components/meetings/meeting-chat";
+import { useMeetingChat } from "@/components/meetings/use-meeting-chat";
 import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon, SpeakerIcon } from "@/components/meetings/room-icons";
 import { PARTICIPANT_ROLE_LABEL } from "@/constants/meetings";
 import { ROUTES } from "@/constants/routes";
@@ -29,6 +30,7 @@ export type RoomData = {
   title: string;
   meeting_code: string;
   started_at: string | null;
+  conversation_id: string | null;
   settings: {
     allow_chat: boolean;
     allow_screen_share: boolean;
@@ -55,6 +57,11 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
   const [elapsed, setElapsed] = useState("00:00:00");
   const [panelWidth, setPanelWidth] = useState(320);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const chat = useMeetingChat({
+    meetingId: room.id,
+    conversationId: room.conversation_id,
+    composerOpen: panel === "chat",
+  });
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<MediaStream | null>(null);
   const screenRef = useRef<MediaStream | null>(null);
@@ -326,7 +333,7 @@ export function MeetingRoom({ room: initialRoom }: { room: RoomData }) {
                     </ul>
                   </div>
                 ) : (
-                  <MeetingChat meetingId={room.id} />
+                  <MeetingChat chat={chat} participants={room.participants} />
                 )}
               </div>
             </aside>
